@@ -1,5 +1,5 @@
 {
-  "name": "logpal",
+  "name": "log-pal",
   "type": "module",
   "version": "0.0.0-dev",
   "private": false,
@@ -10,10 +10,21 @@
   "main": "index.js",
   "scripts": {
     "precompile": "rimraf ./dist",
-    "compile": "tsc"
+    "compile": "tsc",
+    "format": "prettier --write .",
+    "test": "vitest",
+    "lint": "eslint .",
+    "fix": "eslint --fix . && prettier --write ."
   },
   "devDependencies": {
+    "@types/lodash.merge": "^4.6.9",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.6",
     "rimraf": "^6.1.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
   }
 }
