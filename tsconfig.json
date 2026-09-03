@@ -13,6 +13,7 @@
     "declaration": true,
     "declarationMap": true,
     "skipLibCheck": true,
+    "types": ["node"],
 
     // Windows specfic
     "newLine": "lf",
