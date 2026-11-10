@@ -30,7 +30,17 @@ export const handleHttpRequest = async (
       },
     });
 
+    // Create this before the downstream request so it is logged even if it hangs.
+    const logpalExternalCall = logpal.initExternalCall({
+      url: 'https://accounts.example.com',
+      method: 'POST',
+    });
     const response = await handle();
+    logpalExternalCall.finish({
+      statusCode: response.statusCode,
+      custom: { source: 'accounts-service' },
+    });
+
     logpal.addData({
       response: {
         statusCode: response.statusCode,

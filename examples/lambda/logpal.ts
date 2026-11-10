@@ -1,7 +1,7 @@
 import initLogPal from '../../src/index.js';
 
 export const logpal = new initLogPal({
-  eventName: 'summary-log',
+  eventType: 'summary-log',
   format: 'lambda',
   sampling: {
     error: 1,

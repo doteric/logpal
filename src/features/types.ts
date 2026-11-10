@@ -7,9 +7,11 @@ export interface SamplingOptions {
 }
 
 export interface LogPalOptions<Format = unknown> {
-  eventName: string;
+  eventType: string;
   format: Format;
   sampling?: SamplingOptions;
+  /** Emits an info log describing this instance when it is created. Defaults to true. */
+  logInitialization?: boolean;
   logger?: Pick<Console, 'info' | 'warn' | 'error'>;
 }
 
@@ -20,4 +22,16 @@ export interface LogPalEventOptions {
    * here to also keep selected non-error events.
    */
   shouldBypassSampling?: () => boolean;
+}
+
+export interface ProvidedInitExternalCallData {
+  url: string;
+  method: string;
+  custom?: Record<string, unknown>;
+}
+
+export interface ExternalCallData extends ProvidedInitExternalCallData {
+  status: string;
+  statusCode?: number;
+  durationMs?: number;
 }

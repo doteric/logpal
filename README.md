@@ -1,8 +1,10 @@
 # log-pal
 
-`log-pal` creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and upstream responses and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
+`log-pal` creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and external calls and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
 
 Inspired by https://loggingsucks.com/
+
+Most of the project currently is "vibe-coded" to quickly get a proof of concept running, however, it has been "vibe-coded" with very specific rules and intentions in mind. Later as we progress we can improve this further if the tool actually becomes useful.
 
 ## Lambda
 
@@ -12,7 +14,7 @@ The example is split into [examples/lambda/handler.ts](examples/lambda/handler.t
 import initLogPal from 'log-pal';
 
 const logpal = new initLogPal({
-  eventName: 'summary-log',
+  eventType: 'summary-log',
   format: 'lambda',
   sampling: { error: 1, warn: 1, info: 0.1 },
 });
@@ -43,7 +45,7 @@ See [examples/httpRequest/handler.ts](examples/httpRequest/handler.ts) and [exam
 
 ```ts
 const httpLog = new initLogPal({
-  eventName: 'http-request',
+  eventType: 'http-request',
   format: 'httpRequest',
 });
 
@@ -67,7 +69,7 @@ const accountFormat = z.object({
 });
 
 const logpal = new initLogPal({
-  eventName: 'account-operation',
+  eventType: 'account-operation',
   format: accountFormat,
 });
 
@@ -80,4 +82,22 @@ await logpal.event({}, async () => {
 
 Both formats emit JSON. If required format fields or conventional error fields are missing, the log includes `_logpal.errors` with the missing field paths. Valid logs omit `_logpal`.
 
-The initial API is intentionally small: `event`, `addData`, `addError`, `addWarning`, and `addUpstreamResponse`.
+The initial API is intentionally small: `event`, `addData`, `addError`, `addWarning`, and `initExternalCall`. `initExternalCall` records a call immediately and returns a call handle. Finish it after the response arrives; calls that never finish remain marked as started in the finalized event log.
+
+```ts
+const logpalExternalCall = logpal.initExternalCall({
+  url: 'https://service.example.com',
+  method: 'POST',
+});
+
+const response = await fetch('https://service.example.com', { method: 'POST' });
+logpalExternalCall.finish({
+  statusCode: response.status,
+  custom: { retried: false },
+});
+```
+
+## "Thinking aloud"
+
+What should logs actually contain? Shouldn't external calls be tracked separately and not in logs? Logs should contain only errors?
+(TODO: Consider above thought)

@@ -21,10 +21,41 @@ const readLog = (
 };
 
 describe('LogPal full functionality', () => {
+  it('logs the effective instance configuration during initialization', () => {
+    const output = createOutput();
+    new initLogPal({
+      eventType: 'account-operation',
+      format: 'lambda',
+      sampling: { info: 0.2 },
+      logger: output,
+    });
+
+    expect(readLog(output, 'info')).toEqual({
+      eventType: 'logpal-init',
+      logpal: {
+        eventType: 'account-operation',
+        format: 'lambda',
+        sampling: { error: 1, warn: 1, info: 0.2 },
+      },
+    });
+  });
+
+  it('can disable the initialization log', () => {
+    const output = createOutput();
+    new initLogPal({
+      eventType: 'account-operation',
+      format: 'lambda',
+      logInitialization: false,
+      logger: output,
+    });
+
+    expect(output.info).not.toHaveBeenCalled();
+  });
+
   it('creates an HTTP logger and emits complete and invalid events', async () => {
     const output = createOutput();
     const logpal = new initLogPal({
-      eventName: 'http-request',
+      eventType: 'http-request',
       format: 'httpRequest',
       logger: output,
     });
@@ -52,12 +83,12 @@ describe('LogPal full functionality', () => {
       });
     });
 
-    expect(readLog(output, 'info', 0)).toEqual({
+    expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'http-request',
       requestId: 'request-complete',
       errors: [],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
       request: {
         path: '/users',
         method: 'GET',
@@ -71,12 +102,12 @@ describe('LogPal full functionality', () => {
       },
     });
 
-    expect(readLog(output, 'info', 1)).toEqual({
+    expect(readLog(output, 'info', 2)).toEqual({
       eventType: 'http-request',
       requestId: 'request-incomplete',
       errors: [],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
       request: { path: '/users' },
       response: { statusCode: 503 },
       _logpal: {
@@ -91,7 +122,7 @@ describe('LogPal full functionality', () => {
   it('infers nested Lambda fields from its predefined schema', async () => {
     const output = createOutput();
     const logpal = new initLogPal({
-      eventName: 'summary-log',
+      eventType: 'summary-log',
       format: 'lambda',
       logger: output,
     });
@@ -104,13 +135,13 @@ describe('LogPal full functionality', () => {
       }
     });
 
-    expect(readLog(output, 'info')).toEqual({
+    expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'summary-log',
       requestId: 'request-lambda',
       functionName: 'handler',
       errors: [],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
       custom: { customField: 1 },
     });
   });
@@ -118,7 +149,7 @@ describe('LogPal full functionality', () => {
   it('rejects top-level lambda entries outside the schema', async () => {
     const output = createOutput();
     const logpal = new initLogPal({
-      eventName: 'summary-log',
+      eventType: 'summary-log',
       format: 'lambda',
       logger: output,
     });
@@ -126,18 +157,18 @@ describe('LogPal full functionality', () => {
     await logpal.event({ requestId: 'request-invalid-lambda' }, async () => {
       logpal.addData({
         functionName: 'handler',
-        // @ts-expect-error
+        // @ts-expect-error The schema does not allow unknown top-level fields.
         unexpected: true,
       });
     });
 
-    expect(readLog(output, 'info')).toEqual({
+    expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'summary-log',
       requestId: 'request-invalid-lambda',
       functionName: 'handler',
       errors: [],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
       unexpected: true,
       _logpal: {
         errors: [{ path: 'unexpected', code: 'unrecognized_keys' }],
@@ -151,7 +182,7 @@ describe('LogPal full functionality', () => {
       operation: z.object({ name: z.string() }),
     });
     const logpal = new initLogPal({
-      eventName: 'custom-event',
+      eventType: 'custom-event',
       format,
       logger: output,
     });
@@ -164,12 +195,12 @@ describe('LogPal full functionality', () => {
       }
     });
 
-    expect(readLog(output, 'info')).toEqual({
+    expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'custom-event',
       requestId: 'request-custom',
       errors: [],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
       operation: { name: 'created' },
     });
   });
@@ -177,7 +208,7 @@ describe('LogPal full functionality', () => {
   it('records and rethrows handler errors', async () => {
     const output = createOutput();
     const logpal = new initLogPal({
-      eventName: 'summary-log',
+      eventType: 'summary-log',
       format: 'lambda',
       logger: output,
     });
@@ -199,7 +230,75 @@ describe('LogPal full functionality', () => {
         },
       ],
       warnings: [],
-      upstreamResponses: [],
+      externalCalls: [],
+    });
+  });
+
+  it('tracks finished and unfinished external calls', async () => {
+    const output = createOutput();
+    const logpal = new initLogPal({
+      eventType: 'summary-log',
+      format: 'lambda',
+      logInitialization: false,
+      logger: output,
+    });
+
+    await logpal.event({ requestId: 'request-external-call' }, async () => {
+      const accountsCall = logpal.initExternalCall({
+        url: 'https://accounts.example.com',
+        method: 'POST',
+      });
+      accountsCall.finish({
+        statusCode: 200,
+        custom: { accountId: 'account-1' },
+      });
+      logpal.initExternalCall({
+        url: 'https://cache.example.com',
+        method: 'GET',
+      });
+    });
+
+    expect(readLog(output, 'info').externalCalls).toEqual([
+      {
+        url: 'https://accounts.example.com',
+        method: 'POST',
+        status: 'finished',
+        statusCode: 200,
+        custom: { accountId: 'account-1' },
+        durationMs: expect.any(Number),
+      },
+      {
+        url: 'https://cache.example.com',
+        method: 'GET',
+        status: 'started',
+      },
+    ]);
+  });
+
+  it('logs attempted changes after an event has finalized', async () => {
+    const output = createOutput();
+    const logpal = new initLogPal({
+      eventType: 'summary-log',
+      format: 'lambda',
+      logInitialization: false,
+      logger: output,
+    });
+
+    expect(() =>
+      logpal.event({ requestId: 'request-after-final' }, () => {
+        logpal.finalize();
+        logpal.addData({ functionName: 'late-call' });
+      }),
+    ).toThrow('Cannot modify a finalized LogPal event');
+
+    expect(readLog(output, 'error')).toEqual({
+      eventType: 'logpal-call-after-finalization',
+      id: 'request-after-final',
+      logpal: {
+        eventType: 'summary-log',
+        call: 'addData',
+        data: { functionName: 'late-call' },
+      },
     });
   });
 });

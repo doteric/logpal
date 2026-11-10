@@ -4,12 +4,7 @@ import type { HttpRequestLogData } from '../httpRequest.js';
 import type { LambdaLogData } from '../lambda.js';
 import type { z, ZodObject, ZodType } from 'zod';
 
-const predefinedFormats = {
-  lambda: lambdaFormat,
-  httpRequest: httpRequestFormat,
-};
-
-export type FormatName = keyof typeof predefinedFormats;
+export type FormatName = 'lambda' | 'httpRequest';
 export type FormatOption = FormatName | ZodObject;
 
 export type LogDataFor<Format extends FormatOption> = Format extends FormatName

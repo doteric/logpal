@@ -1,7 +1,7 @@
 import initLogPal from '../../src/index.js';
 
 export const logpal = new initLogPal({
-  eventName: 'http-request',
+  eventType: 'http-request',
   format: 'httpRequest',
   sampling: {
     error: 1,

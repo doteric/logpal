@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.OS }}-cache-${{ hashFiles('**/package-lock.json') }}
       - name: Format Check
         working-directory: .
-        run: npx run format
+        run: npm run format
   test:
     name: test
     needs: install
