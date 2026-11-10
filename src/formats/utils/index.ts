@@ -1,7 +1,7 @@
-import { httpRequestFormat } from './httpRequest.js';
-import { lambdaFormat } from './lambda.js';
-import type { HttpRequestLogData } from './httpRequest.js';
-import type { LambdaLogData } from './lambda.js';
+import { httpRequestFormat } from '../httpRequest.js';
+import { lambdaFormat } from '../lambda.js';
+import type { HttpRequestLogData } from '../httpRequest.js';
+import type { LambdaLogData } from '../lambda.js';
 import type { z, ZodObject, ZodType } from 'zod';
 
 const predefinedFormats = {
@@ -26,4 +26,12 @@ export const resolveFormat = (format: FormatOption): ZodType => {
   return format;
 };
 
-export { httpRequestFormat, lambdaFormat };
+type DeepPartial<Value> = Value extends readonly (infer Item)[]
+  ? DeepPartial<Item>[]
+  : Value extends object
+    ? { [Key in keyof Value]?: DeepPartial<Value[Key]> }
+    : Value;
+
+export type FormatLogData<Format extends z.ZodType> = DeepPartial<
+  z.input<Format>
+>;

@@ -2,6 +2,8 @@
 
 `log-pal` creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and upstream responses and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
 
+Inspired by https://loggingsucks.com/
+
 ## Lambda
 
 The example is split into [examples/lambda/handler.ts](examples/lambda/handler.ts), [examples/lambda/logpal.ts](examples/lambda/logpal.ts), and [examples/lambda/operations.ts](examples/lambda/operations.ts). The `LogPal` instance is created once. Each handler invocation calls `logpal.event()` with its per-event options and callback.

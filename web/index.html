@@ -1,0 +1,245 @@
+<!doctype html>
+<!--
+TODO: Use react instead?
+TODO: Infer the formats from the code itself?
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Structured, context-rich logging for Node.js."
+    />
+    <meta name="theme-color" content="#101a2d" />
+    <title>LogPal — logs with the whole story</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav class="shell nav" aria-label="Main navigation">
+        <a class="brand" href="#top"><b>&gt;_</b>logpal</a>
+        <button
+          class="menu"
+          type="button"
+          aria-expanded="false"
+          aria-controls="links"
+        >
+          Menu
+        </button>
+        <div id="links" class="links">
+          <a href="#why">Why LogPal</a><a href="#features">How it works</a
+          ><a href="#formats">Formats</a
+          ><a href="https://github.com/doteric/logpal/tree/master/examples"
+            >Example usage ↗</a
+          ><a href="https://www.npmjs.com/package/log-pal">npm</a
+          ><a href="https://github.com/doteric/logmate">GitHub ↗</a>
+        </div>
+      </nav>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div class="shell hero-grid">
+          <div>
+            <p class="eyebrow">Structured logging for Node.js</p>
+            <h1>Logs with the whole story.</h1>
+            <p class="lead">
+              LogPal collects context as work happens, then emits
+              <strong>one structured event</strong> when it matters. Less noise.
+              More answers.
+            </p>
+            <p class="actions">
+              <a class="button primary" href="#install">Get started ↓</a
+              ><a
+                class="button secondary"
+                href="https://github.com/doteric/logmate"
+                >View on GitHub ↗</a
+              >
+            </p>
+          </div>
+          <div class="terminal" aria-label="Example structured log output">
+            <div class="bar">
+              <i></i><i></i><i></i> checkout — complete event
+            </div>
+            <pre><code>{
+  <em>"event"</em>: <strong>"checkout"</strong>,
+  <em>"requestId"</em>: <strong>"req_7z2k"</strong>,
+  <em>"status"</em>: <strong>200</strong>,
+  <em>"durationMs"</em>: <strong>84</strong>,
+  <em>"userId"</em>: <strong>"usr_42"</strong>,
+  <em>"_logpal"</em>: { <em>"complete"</em>: <strong>true</strong> }
+}
+<small># one event, all the context</small></code></pre>
+          </div>
+        </div>
+      </section>
+      <section id="why" class="statement">
+        <div class="shell two-col">
+          <div>
+            <p class="eyebrow">Logging, reconsidered</p>
+            <h2>Stop collecting breadcrumbs.</h2>
+          </div>
+          <div>
+            <p>
+              Traditional logging scatters an event’s context across a trail of
+              messages. When you need an answer, you are left reconstructing a
+              story from fragments.
+            </p>
+            <blockquote>
+              Build one useful record of what happened — from start to finish.
+            </blockquote>
+          </div>
+        </div>
+      </section>
+      <section id="features" class="features">
+        <div class="shell">
+          <p class="eyebrow">A calmer logging flow</p>
+          <h2>Context in. A complete event out.</h2>
+          <p class="intro">
+            Designed around the request or invocation, not the individual log
+            statement.
+          </p>
+          <div class="cards">
+            <article>
+              <span>01 / EVENT-SCOPED</span>
+              <h3>Start with an event</h3>
+              <p>
+                Create one event per invocation. AsyncLocalStorage keeps it
+                available to the helpers doing the real work.
+              </p>
+            </article>
+            <article>
+              <span>02 / ENRICH AS YOU GO</span>
+              <h3>Add the useful bits</h3>
+              <p>
+                Attach data, upstream responses, warnings, and errors at the
+                point where they become known.
+              </p>
+            </article>
+            <article>
+              <span>03 / FINALIZE ONCE</span>
+              <h3>Leave with confidence</h3>
+              <p>
+                LogPal finalizes automatically, applies sampling, and flags
+                incomplete data with clear diagnostics.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="formats" class="formats" aria-labelledby="formats-title">
+        <div class="shell">
+          <p class="eyebrow">Predefined formats</p>
+          <h2 id="formats-title">A format for the event in front of you.</h2>
+          <p class="intro">
+            Select a built-in schema to see the exact Zod format and a payload
+            it accepts. LogPal adds event metadata and log collections when it
+            finalizes the event.
+          </p>
+          <div
+            class="format-picker"
+            role="tablist"
+            aria-label="Predefined formats"
+          >
+            <button
+              class="format-tab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="format-details"
+              data-format="lambda"
+            >
+              AWS Lambda
+            </button>
+            <button
+              class="format-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="format-details"
+              data-format="httpRequest"
+            >
+              HTTP request
+            </button>
+          </div>
+          <div class="format-details" id="format-details" role="tabpanel">
+            <div>
+              <p class="format-name" id="format-name">AWS Lambda</p>
+              <p class="format-description" id="format-description">
+                Capture AWS invocation details and attach your own contextual
+                data.
+              </p>
+            </div>
+            <div class="format-code">
+              <p>Schema</p>
+              <pre><code id="format-schema"></code></pre>
+            </div>
+            <div class="format-code">
+              <p>Example final log</p>
+              <pre><code id="format-example"></code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="examples" class="examples" aria-labelledby="examples-title">
+        <div class="shell">
+          <p class="eyebrow">See it in context</p>
+          <h2 id="examples-title">Example usage.</h2>
+          <p class="intro">
+            Browse ready-to-use HTTP request and AWS Lambda examples in the
+            repository.
+          </p>
+          <p class="actions">
+            <a
+              class="button primary"
+              href="https://github.com/doteric/logpal/tree/master/examples"
+              >Browse examples on GitHub ↗</a
+            >
+          </p>
+        </div>
+      </section>
+      <section id="install" class="install">
+        <div class="shell two-col">
+          <div>
+            <p class="eyebrow">Ready when you are</p>
+            <h2>Make every event easier to understand.</h2>
+            <p class="lead">
+              A focused API, Zod-powered formats, and no runtime dependency
+              beyond Zod.
+            </p>
+          </div>
+          <div class="code">
+            <button type="button" data-copy="npm install logpal">Copy</button>
+            <pre>
+$ npm install logpal
+
+import initLogPal from 'logpal';
+
+const logpal = new initLogPal({
+  eventName: 'checkout',
+  format: 'httpRequest',
+});
+
+await logpal.event({ requestId: 'req_7z2k' }, async () => {
+  logpal.addData({
+    request: { path: '/checkout', method: 'POST' },
+  });
+
+  const response = await processCheckout();
+  logpal.addData({
+    response: { statusCode: response.status, durationMs: 84 },
+  });
+});</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="shell">
+        <span>© <span id="year"></span> doteric.net</span
+        ><a href="https://github.com/doteric/logmate">GitHub ↗</a>
+      </div>
+    </footer>
+  </body>
+</html>

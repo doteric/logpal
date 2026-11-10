@@ -4,15 +4,16 @@
   "version": "0.0.0-dev",
   "private": false,
   "description": "",
-  "homepage": "https://www.npmjs.com/package/logpal",
+  "homepage": "https://www.npmjs.com/package/log-pal",
   "license": "ISC",
   "author": "doteric",
   "main": "index.js",
   "scripts": {
     "precompile": "rimraf ./dist",
     "compile": "tsc --project tsconfig.build.json",
+    "build:web": "node ./scripts/build-web.mjs",
     "dev": "tsc --watch",
-    "format": "prettier --write .",
+    "format": "prettier --check .",
     "test": "vitest",
     "lint": "eslint .",
     "fix": "eslint --fix . && prettier --write ."

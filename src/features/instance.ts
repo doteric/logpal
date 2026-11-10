@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { LogPalEvent } from './logPalEvent.js';
 import { createSamplingRates } from './sampling.js';
-import type { FormatOption, LogDataFor } from '../formats/index.js';
+import type { FormatOption, LogDataFor } from '../formats/utils/index.js';
 import type { LogPalEventOptions, LogPalOptions } from './types.js';
 
 /** Creates event-scoped structured logs using the selected format. */
@@ -49,6 +49,10 @@ export class initLogPal<Format extends FormatOption> {
     this.getActiveEvent().addWarning(data);
   }
 
+  // TODO: Should I consider calling this differently?
+  // Maybe ExternalResponse or ExternalCall instead?
+  // TODO: Shouldn't I add the external call before even starting it
+  // so that I know that it has been started, but maybe never finished?
   public addUpstreamResponse(data: Record<string, unknown>) {
     this.getActiveEvent().addUpstreamResponse(data);
   }

@@ -6,7 +6,7 @@ on:
       - '**'
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '26'
 
 jobs:
   install:
@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.OS }}-cache-${{ hashFiles('**/package-lock.json') }}
       - name: Format Check
         working-directory: .
-        run: npx prettier --check .
+        run: npx run format
   test:
     name: test
     needs: install

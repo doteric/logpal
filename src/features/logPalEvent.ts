@@ -1,7 +1,7 @@
-import { resolveFormat } from '../formats/index.js';
+import { resolveFormat } from '../formats/utils/index.js';
 import { errorDetails, isRecord, mergeLogData } from './loggerUtils.js';
 import { shouldSample } from './sampling.js';
-import type { FormatOption, LogDataFor } from '../formats/index.js';
+import type { FormatOption, LogDataFor } from '../formats/utils/index.js';
 import type { LogLevel, LogPalEventOptions } from './types.js';
 import type { ZodType } from 'zod';
 

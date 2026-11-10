@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { FormatLogData } from './types.js';
+import type { FormatLogData } from './utils/index.js';
 
 export const httpRequestFormat = z
   .object({
