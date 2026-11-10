@@ -1,36 +1,81 @@
 # log-pal
 
-`log-pal` is a small request-wide logger for AWS Lambda. It collects data, warnings, errors, and upstream responses and writes one structured JSON summary log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
+`log-pal` creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and upstream responses and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
 
 ## Lambda
 
-The complete example is split into [examples/lambda/handler.ts](examples/lambda/handler.ts), [examples/lambda/logpal.ts](examples/lambda/logpal.ts), and [examples/lambda/operations.ts](examples/lambda/operations.ts). The handler creates the request logger and establishes the AsyncLocalStorage context. The operation functions retrieve that logger with `logpal.current()` without receiving it as an argument.
+The example is split into [examples/lambda/handler.ts](examples/lambda/handler.ts), [examples/lambda/logpal.ts](examples/lambda/logpal.ts), and [examples/lambda/operations.ts](examples/lambda/operations.ts). The `LogPal` instance is created once. Each handler invocation calls `logpal.event()` with its per-event options and callback.
 
 ```ts
 import initLogPal from 'log-pal';
 
 const logpal = new initLogPal({
+  eventName: 'summary-log',
   format: 'lambda',
   sampling: { error: 1, warn: 1, info: 0.1 },
 });
 
 export const handler = async (event: unknown) => {
-  const logger = logpal.new({
-    requestId: 'request-id-from-lambda',
-    shouldBypassSampling: () => true,
-  });
-
-  return logpal.run(logger, async () => {
-    logpal.current()?.addData({ event });
-  });
+  return logpal.event(
+    {
+      requestId: 'request-id-from-lambda',
+      shouldBypassSampling: () => true,
+    },
+    async () => {
+      logpal.addData({
+        context: { functionName: 'handler' },
+        userId: 'user-id',
+      });
+    },
+  );
 };
 ```
 
-`run` uses Node's `AsyncLocalStorage`, so helper functions can retrieve the current request logger with `logpal.current()` without passing it through every function call.
-It finalizes the log when the callback completes. If the callback throws or rejects, `run` records an `unhandled-error`, finalizes the log, and re-throws the original error.
+`event()` uses Node's `AsyncLocalStorage`, so helper functions can call `logpal.addData()` without passing the event through every function call. It finalizes the log when the callback completes. If the callback throws or rejects, it records an `unhandled-error`, finalizes the log, and re-throws the original error.
+
+## HTTP Request
+
+The HTTP format checks the request path, method, response status code, and duration. Supply all of them through `addData()`. The `format` option determines the `addData()` input type; no explicit type arguments are needed.
+
+See [examples/httpRequest/handler.ts](examples/httpRequest/handler.ts) and [examples/httpRequest/logpal.ts](examples/httpRequest/logpal.ts) for a handler that records the request, measures the operation duration, and records the response.
+
+```ts
+const httpLog = new initLogPal({
+  eventName: 'http-request',
+  format: 'httpRequest',
+});
+
+await httpLog.event({ requestId: 'trace-id' }, async () => {
+  httpLog.addData({
+    request: { path: '/users', method: 'GET' },
+    response: { statusCode: 200, durationMs: 18 },
+    userId: 'user-id',
+  });
+});
+```
+
+Custom Zod object schemas are also supported. Define only the data passed through `addData()`; LogPal adds the event metadata and log collections during finalization:
+
+```ts
+import { z } from 'zod';
+
+const accountFormat = z.object({
+  account: z.object({ id: z.string() }),
+  operation: z.string(),
+});
+
+const logpal = new initLogPal({
+  eventName: 'account-operation',
+  format: accountFormat,
+});
+
+await logpal.event({}, async () => {
+  logpal.addData({ account: { id: 'acct-1' }, operation: 'read' });
+});
+```
 
 ## Output
 
-The Lambda formatter emits JSON. Missing optional constructor data or conventional error fields are recorded in `_logpal.missingParameters` instead of being silently lost. For example, an error without `type`, `message`, or `details` is still logged, with those missing fields listed in `_logpal`.
+Both formats emit JSON. If required format fields or conventional error fields are missing, the log includes `_logpal.errors` with the missing field paths. Valid logs omit `_logpal`.
 
-The initial API is intentionally small: `addData`, `addError`, `addWarning`, `addUpstreamResponse`, and `finalize`.
+The initial API is intentionally small: `event`, `addData`, `addError`, `addWarning`, and `addUpstreamResponse`.

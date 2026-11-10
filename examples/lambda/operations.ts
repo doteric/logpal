@@ -1,13 +1,19 @@
 import { logpal } from './logpal.js';
 
+// This file is only to show that you do not need to pass around the logpal instance
+// You can just import the instance and use methods directly
+
 export const addRequestData = () => {
-  logpal.current()?.addData({
-    hello: 'world',
+  logpal.addData({
+    functionName: 'example',
+    custom: {
+      test: 'example123',
+    },
   });
 };
 
 export const recordExampleError = () => {
-  logpal.current()?.addError({
+  logpal.addError({
     text: 'example',
   });
 };

@@ -9,11 +9,12 @@ const shouldBypassSampling = (event: unknown) =>
   event.path.startsWith('/example');
 
 export const handler = (event: unknown) => {
-  const logger = logpal.new({
-    shouldBypassSampling: () => shouldBypassSampling(event),
-  });
-
-  return logpal.run(logger, async () => {
-    handleRequest();
-  });
+  return logpal.event(
+    {
+      shouldBypassSampling: () => shouldBypassSampling(event),
+    },
+    async () => {
+      handleRequest();
+    },
+  );
 };
