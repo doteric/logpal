@@ -3,14 +3,22 @@ import {
   cpSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const webDirectory = resolve('web');
 const outputDirectory = resolve(webDirectory, 'dist');
-const assets = ['styles.css', 'app.js'];
+const filesIn = (directory) =>
+  readdirSync(resolve(webDirectory, directory), {
+    withFileTypes: true,
+  }).flatMap((entry) => {
+    const filename = `${directory}/${entry.name}`;
+    return entry.isDirectory() ? filesIn(filename) : [filename];
+  });
+const assets = ['styles.css', 'app.js', ...filesIn('assets')];
 
 const filenameFor = (filename, content) => {
   const hash = createHash('sha256').update(content).digest('hex').slice(0, 12);
@@ -35,5 +43,7 @@ const outputHtml = Object.entries(filenames).reduce(
 
 writeFileSync(resolve(outputDirectory, 'index.html'), outputHtml);
 for (const [source, output] of Object.entries(filenames)) {
-  cpSync(resolve(webDirectory, source), resolve(outputDirectory, output));
+  const outputPath = resolve(outputDirectory, output);
+  mkdirSync(dirname(outputPath), { recursive: true });
+  cpSync(resolve(webDirectory, source), outputPath);
 }

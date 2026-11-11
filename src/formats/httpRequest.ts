@@ -2,6 +2,8 @@ import { z } from 'zod';
 import type { FormatLogData } from './utils/index.js';
 
 // TODO: Re-think structure and implement
+// TODO: THE LOG FORMAT IS NOT FINAL AND IS JUST FOR BETA VERSION
+
 export const httpRequestFormat = z
   .object({
     request: z.object({

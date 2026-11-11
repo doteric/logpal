@@ -1,6 +1,10 @@
-# log-pal
+<p align="center">
+  <img src="web/assets/logpal-logo-color-white.svg" alt="LogPal logo" width="240" />
+</p>
 
-`log-pal` creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and external calls and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
+# LogPal
+
+LogPal creates one long-lived logging instance and one event logger per invocation. Each event collects data, warnings, errors, and external calls and writes one structured JSON log. Sampling can reduce successful-request noise while errors and warnings use their own rates.
 
 Inspired by https://loggingsucks.com/
 
@@ -11,9 +15,9 @@ Most of the project currently is "vibe-coded" to quickly get a proof of concept 
 The example is split into [examples/lambda/handler.ts](examples/lambda/handler.ts), [examples/lambda/logpal.ts](examples/lambda/logpal.ts), and [examples/lambda/operations.ts](examples/lambda/operations.ts). The `LogPal` instance is created once. Each handler invocation calls `logpal.event()` with its per-event options and callback.
 
 ```ts
-import initLogPal from 'log-pal';
+import LogPal from 'log-pal';
 
-const logpal = new initLogPal({
+const logpal = new LogPal({
   eventType: 'summary-log',
   format: 'lambda',
   sampling: { error: 1, warn: 1, info: 0.1 },
@@ -44,7 +48,7 @@ The HTTP format checks the request path, method, response status code, and durat
 See [examples/httpRequest/handler.ts](examples/httpRequest/handler.ts) and [examples/httpRequest/logpal.ts](examples/httpRequest/logpal.ts) for a handler that records the request, measures the operation duration, and records the response.
 
 ```ts
-const httpLog = new initLogPal({
+const httpLog = new LogPal({
   eventType: 'http-request',
   format: 'httpRequest',
 });
@@ -68,7 +72,7 @@ const accountFormat = z.object({
   operation: z.string(),
 });
 
-const logpal = new initLogPal({
+const logpal = new LogPal({
   eventType: 'account-operation',
   format: accountFormat,
 });

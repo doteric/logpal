@@ -4,10 +4,17 @@
   "version": "0.0.0-dev",
   "private": false,
   "description": "",
-  "homepage": "https://www.npmjs.com/package/log-pal",
+  "homepage": "https://pages.doteric.net/logpal/",
+  "repository": {
+    "url": "https://github.com/doteric/logpal"
+  },
   "license": "ISC",
   "author": "doteric",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "precompile": "rimraf ./dist",
     "compile": "tsc --project tsconfig.build.json",

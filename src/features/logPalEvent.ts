@@ -102,6 +102,7 @@ export class LogPalEvent<Format extends FormatOption> {
     if (this.finalized) return;
     this.finalized = true;
 
+    // TODO: Consider automatically adding response.durationMs for HTTP request events before validation.
     const validation = this.format.safeParse(this.data);
     const validatedData =
       validation.success && isRecord(validation.data)

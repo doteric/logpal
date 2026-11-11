@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import initLogPal from './index.js';
+import LogPal from './index.js';
 
 const createOutput = () => ({
   info: vi.fn(),
@@ -23,7 +23,7 @@ const readLog = (
 describe('LogPal full functionality', () => {
   it('logs the effective instance configuration during initialization', () => {
     const output = createOutput();
-    new initLogPal({
+    new LogPal({
       eventType: 'account-operation',
       format: 'lambda',
       sampling: { info: 0.2 },
@@ -42,7 +42,7 @@ describe('LogPal full functionality', () => {
 
   it('can disable the initialization log', () => {
     const output = createOutput();
-    new initLogPal({
+    new LogPal({
       eventType: 'account-operation',
       format: 'lambda',
       logInitialization: false,
@@ -54,7 +54,7 @@ describe('LogPal full functionality', () => {
 
   it('creates an HTTP logger and emits complete and invalid events', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'http-request',
       format: 'httpRequest',
       logger: output,
@@ -121,7 +121,7 @@ describe('LogPal full functionality', () => {
 
   it('infers nested Lambda fields from its predefined schema', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'summary-log',
       format: 'lambda',
       logger: output,
@@ -148,7 +148,7 @@ describe('LogPal full functionality', () => {
 
   it('rejects top-level lambda entries outside the schema', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'summary-log',
       format: 'lambda',
       logger: output,
@@ -181,7 +181,7 @@ describe('LogPal full functionality', () => {
     const format = z.object({
       operation: z.object({ name: z.string() }),
     });
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'custom-event',
       format,
       logger: output,
@@ -207,7 +207,7 @@ describe('LogPal full functionality', () => {
 
   it('records and rethrows handler errors', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'summary-log',
       format: 'lambda',
       logger: output,
@@ -236,7 +236,7 @@ describe('LogPal full functionality', () => {
 
   it('tracks finished and unfinished external calls', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'summary-log',
       format: 'lambda',
       logInitialization: false,
@@ -277,7 +277,7 @@ describe('LogPal full functionality', () => {
 
   it('logs attempted changes after an event has finalized', async () => {
     const output = createOutput();
-    const logpal = new initLogPal({
+    const logpal = new LogPal({
       eventType: 'summary-log',
       format: 'lambda',
       logInitialization: false,

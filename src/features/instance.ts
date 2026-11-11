@@ -9,7 +9,7 @@ import type {
 } from './types.js';
 
 /** Creates event-scoped structured logs using the selected format. */
-export class initLogPal<Format extends FormatOption> {
+export class LogPal<Format extends FormatOption> {
   private readonly sampling: Record<'error' | 'warn' | 'info', number>;
   private readonly output: Pick<Console, 'info' | 'warn' | 'error'>;
   private readonly storage = new AsyncLocalStorage<LogPalEvent<Format>>();
@@ -83,4 +83,4 @@ export class initLogPal<Format extends FormatOption> {
   }
 }
 
-export default initLogPal;
+export default LogPal;

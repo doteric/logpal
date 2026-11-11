@@ -1,6 +1,6 @@
-import initLogPal from '../../src/index.js';
+import LogPal from '../../src/index.js';
 
-export const logpal = new initLogPal({
+export const logpal = new LogPal({
   eventType: 'http-request',
   format: 'httpRequest',
   sampling: {

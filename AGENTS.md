@@ -6,7 +6,7 @@ Provide fast, structured event logging with consistent formats, automatic finali
 
 ## Architecture
 
-- Create one `initLogPal` instance for the application and one event with `logpal.event()` per invocation.
+- Create one `LogPal` instance for the application and one event with `logpal.event()` per invocation.
 - Use `AsyncLocalStorage` so event handlers and their helpers can call the instance's logging methods directly.
 - Keep event handling, sampling, and format schemas in focused modules.
 - Keep predefined Zod schemas and their inferred payload types together under `src/formats/`, with one file per format.
