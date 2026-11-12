@@ -10,24 +10,18 @@ const formatExample = document.querySelector('#format-example');
 const formatDetails = document.querySelector('#format-details');
 
 const formats = {
-  lambda: {
-    name: 'AWS Lambda',
-    description: 'AWS invocation fields, supplied through addData().',
+  action: {
+    name: 'Action based',
+    description: 'Generic context and completed actions for any operation.',
     schema: `import { z } from 'zod';
 
-const lambdaFormat = z
+const actionFormat = z
   .object({
-    functionName: z.string().optional(),
-    functionVersion: z.string().optional(),
-    awsRequestId: z.string().optional(),
-    custom: z.record(z.string(), z.unknown()).optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();`,
     example: `{
-  "functionName": "process-order",
-  "functionVersion": "$LATEST",
-  "awsRequestId": "bd6ec3d8-1d7b-4b79",
-  "custom": {
+  "context": {
     "orderId": "ord_2048",
     "region": "eu-central-1"
   },
@@ -35,7 +29,13 @@ const lambdaFormat = z
   "requestId": "req_7z2k",
   "errors": [],
   "warnings": [],
-  "externalCalls": []
+  "externalCalls": [],
+  "actions": [{
+    "name": "Order processed",
+    "custom": { "orderId": "ord_2048" },
+    "number": 1,
+    "timestamp": "2026-11-17T12:00:00.000Z"
+  }]
 }`,
   },
   httpRequest: {
@@ -84,7 +84,13 @@ const httpRequestFormat = z
   "requestId": "req_7z2k",
   "errors": [],
   "warnings": [],
-  "externalCalls": []
+  "externalCalls": [],
+  "actions": [{
+    "name": "Order created",
+    "custom": { "orderId": "ord_2048" },
+    "number": 1,
+    "timestamp": "2026-11-17T12:00:00.000Z"
+  }]
 }`,
   },
 };
@@ -172,7 +178,7 @@ formatTabs.forEach((tab, index) => {
 });
 
 document.querySelector('#year').textContent = new Date().getFullYear();
-selectFormat('lambda');
+selectFormat('action');
 
 const logDemo = document.querySelector('[data-log-demo]');
 

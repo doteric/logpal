@@ -2,7 +2,7 @@ name: Deploy website to GitHub Pages
 
 on:
   push:
-    branches: [feat/init] # TODO: Change to master later
+    branches: [master]
     paths:
       - 'web/**'
       - '.github/workflows/deploy-web.yml'

@@ -36,6 +36,10 @@ export const handleHttpRequest = async (
       method: 'POST',
     });
     const response = await handle();
+    logpal.addAction({
+      name: 'Account request completed',
+      custom: { statusCode: response.statusCode },
+    });
     logpalExternalCall.finish({
       statusCode: response.statusCode,
       custom: { source: 'accounts-service' },

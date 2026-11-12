@@ -5,8 +5,7 @@ import { logpal } from './logpal.js';
 
 export const addRequestData = () => {
   logpal.addData({
-    functionName: 'example',
-    custom: {
+    context: {
       test: 'example123',
     },
   });
@@ -20,5 +19,6 @@ export const recordExampleError = () => {
 
 export const handleRequest = () => {
   addRequestData();
+  logpal.addAction({ name: 'Request data collected' });
   recordExampleError();
 };

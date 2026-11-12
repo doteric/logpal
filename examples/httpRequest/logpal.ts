@@ -1,6 +1,7 @@
 import LogPal from '../../src/index.js';
 
 export const logpal = new LogPal({
+  validateOutput: true,
   eventType: 'http-request',
   format: 'httpRequest',
   sampling: {

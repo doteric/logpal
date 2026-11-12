@@ -101,6 +101,10 @@ h3 {
   padding-block: 100px;
   border-bottom: 1px solid var(--line);
 }
+main > section:nth-of-type(odd):not(#logpal),
+#logpal > .section:nth-child(odd) {
+  background-color: #ffffff08;
+}
 h2,
 .examples h3,
 .install h3 {
@@ -225,11 +229,11 @@ header {
 }
 .hero {
   position: relative;
-  padding-top: 86px;
   overflow: hidden;
 }
 .hero-grid {
   display: grid;
+  padding-top: 86px;
   grid-template-columns: 1.1fr 1fr;
   align-items: center;
   gap: 5rem;
@@ -585,6 +589,30 @@ pre code {
 .inspiration a:hover {
   color: var(--white);
 }
+.key-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  padding: 0;
+  margin: 2.75rem 0 0;
+  list-style: none;
+}
+.key-features li {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.key-features h3 {
+  font-size: 19px;
+}
+.key-features p {
+  margin-top: 0.8rem;
+  color: var(--muted);
+  font-size: 14px;
+}
+.key-features code {
+  font: 12px var(--mono);
+  color: var(--white);
+}
 .flow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -635,9 +663,6 @@ pre code {
 .flow p code {
   font: 12px var(--mono);
   color: var(--white);
-}
-.formats {
-  background: #0000000d;
 }
 .format-workspace {
   margin-top: 2.75rem;
@@ -908,7 +933,7 @@ footer {
   gap: 0.5rem;
 }
 @media (min-width: 1500px) {
-  .hero {
+  .hero-grid {
     padding-top: 110px;
   }
   .principles {
@@ -947,6 +972,9 @@ footer {
   }
 }
 @media (max-width: 800px) {
+  .key-features {
+    grid-template-columns: 1fr;
+  }
   .shell {
     width: calc(100% - 3rem);
   }
@@ -960,7 +988,7 @@ footer {
   .section {
     padding-block: 72px;
   }
-  .hero {
+  .hero-grid {
     padding-top: 64px;
   }
   .hero-grid {
@@ -1131,7 +1159,7 @@ footer {
     margin-top: 0.5rem;
     padding: 0.7rem 0.8rem;
   }
-  .hero {
+  .hero-grid {
     padding-top: 44px;
   }
   .eyebrow {

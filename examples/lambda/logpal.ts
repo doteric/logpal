@@ -1,8 +1,9 @@
 import LogPal from '../../src/index.js';
 
 export const logpal = new LogPal({
+  validateOutput: true,
   eventType: 'summary-log',
-  format: 'lambda',
+  format: 'action',
   sampling: {
     error: 1,
     warn: 1,

@@ -3,6 +3,7 @@ import { errorDetails, isRecord, mergeLogData } from './loggerUtils.js';
 import { shouldSample } from './sampling.js';
 import type { FormatOption, LogDataFor } from '../formats/utils/index.js';
 import type {
+  ActionData,
   ExternalCallData,
   LogLevel,
   LogPalEventOptions,
@@ -22,6 +23,10 @@ export class LogPalEvent<Format extends FormatOption> {
   private readonly errors: Record<string, unknown>[] = [];
   private readonly warnings: Record<string, unknown>[] = [];
   private readonly externalCalls: ExternalCallData[] = [];
+  private readonly actions: (ActionData & {
+    number: number;
+    timestamp: string;
+  })[] = [];
 
   public constructor(
     private readonly eventType: string,
@@ -29,6 +34,7 @@ export class LogPalEvent<Format extends FormatOption> {
     private readonly options: LogPalEventOptions,
     private readonly sampling: SamplingRates,
     private readonly output: EventLogger,
+    private readonly validateOutput: boolean,
   ) {
     this.format = resolveFormat(format);
   }
@@ -49,6 +55,15 @@ export class LogPalEvent<Format extends FormatOption> {
     this.assertOpen('addWarning', data);
     if (this.level !== 'error') this.level = 'warn';
     this.warnings.push(data);
+  }
+
+  public addAction(data: ActionData) {
+    this.assertOpen('addAction', data);
+    this.actions.push({
+      ...data,
+      number: this.actions.length + 1,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   public initExternalCall(data: ProvidedInitExternalCallData) {
@@ -103,9 +118,11 @@ export class LogPalEvent<Format extends FormatOption> {
     this.finalized = true;
 
     // TODO: Consider automatically adding response.durationMs for HTTP request events before validation.
-    const validation = this.format.safeParse(this.data);
+    const validation = this.validateOutput
+      ? this.format.safeParse(this.data)
+      : undefined;
     const validatedData =
-      validation.success && isRecord(validation.data)
+      validation?.success && isRecord(validation.data)
         ? validation.data
         : this.data;
     const log: Record<string, unknown> = {
@@ -115,18 +132,20 @@ export class LogPalEvent<Format extends FormatOption> {
       errors: this.errors,
       warnings: this.warnings,
       externalCalls: this.externalCalls,
+      ...(this.actions.length > 0 ? { actions: this.actions } : {}),
     };
     if (
       !shouldSample(
         this.level,
         this.sampling,
         this.options.shouldBypassSampling,
+        this.options.requestId,
       )
     ) {
       return;
     }
 
-    if (!validation.success) {
+    if (validation && !validation.success) {
       log._logpal = {
         errors: validation.error.issues.map((issue) => ({
           path:
