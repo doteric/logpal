@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/assets/logpal-logo-color-white.svg" alt="LogPal logo" width="240" />
+  <img src="web/assets/logpal-charcoal-circle.svg" alt="LogPal logo" width="240" />
 </p>
 
 # LogPal
