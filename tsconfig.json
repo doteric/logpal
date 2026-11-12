@@ -6,18 +6,19 @@
     "moduleResolution": "nodenext",
     "sourceMap": true,
     "outDir": "dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "lib": ["es2021"],
     "strict": true,
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
     "skipLibCheck": true,
+    "types": ["node"],
 
     // Windows specfic
     "newLine": "lf",
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
+  "include": ["src", "examples"],
   "exclude": ["src/**/*.test.ts"]
 }

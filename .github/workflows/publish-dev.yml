@@ -1,0 +1,29 @@
+name: Publish dev version of Package to npmjs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_publish_dev:
+    if: github.ref_name != github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    environment: npm_dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+      - name: Build and publish dev package
+        run: |
+          BRANCH_SLUG=$(echo "${{ github.ref_name }}" | sed 's|/|-|g')
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          npm version "0.0.0-${BRANCH_SLUG}-${SHORT_SHA}" --no-git-tag-version
+          npm ci
+          npm run compile
+          npm publish --tag dev --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
