@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { LogLevel, SamplingOptions } from './types.js';
 
 const DEFAULT_SAMPLING: Record<LogLevel, number> = {
@@ -23,7 +24,18 @@ export const shouldSample = (
   level: LogLevel,
   rates: Record<LogLevel, number>,
   shouldBypass: (() => boolean) | undefined,
-) =>
-  level === 'error' ||
-  shouldBypass?.() === true ||
-  Math.random() < rates[level];
+  requestId?: string,
+) => {
+  if (level === 'error' || shouldBypass?.() === true) return true;
+
+  const rate = rates[level];
+  if (rate === 0 || rate === 1) return rate === 1;
+
+  // Use the same UTF-8 hash and unsigned 32-bit fraction across all instances.
+  const sample =
+    requestId === undefined
+      ? Math.random()
+      : createHash('sha256').update(requestId).digest().readUInt32BE(0) /
+        0x1_0000_0000;
+  return sample < rate;
+};

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import LogPal from './index.js';
 
@@ -21,11 +21,39 @@ const readLog = (
 };
 
 describe('LogPal full functionality', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it.each([undefined, null, 'true', 1])(
+    'requires an explicit boolean validation choice, rejecting %s',
+    (validateOutput) => {
+      expect(() =>
+        Reflect.construct(LogPal, [
+          {
+            eventType: 'test',
+            format: 'action',
+            validateOutput,
+          },
+        ]),
+      ).toThrow('validateOutput must be explicitly set to true or false');
+    },
+  );
+
+  it('requires the validation choice in TypeScript', () => {
+    if (false) {
+      // @ts-expect-error Callers must choose whether to validate output.
+      new LogPal({ eventType: 'test', format: 'action' });
+    }
+  });
+
   it('logs the effective instance configuration during initialization', () => {
     const output = createOutput();
     new LogPal({
+      validateOutput: true,
       eventType: 'account-operation',
-      format: 'lambda',
+      format: 'action',
       sampling: { info: 0.2 },
       logger: output,
     });
@@ -34,7 +62,8 @@ describe('LogPal full functionality', () => {
       eventType: 'logpal-init',
       logpal: {
         eventType: 'account-operation',
-        format: 'lambda',
+        format: 'action',
+        validateOutput: true,
         sampling: { error: 1, warn: 1, info: 0.2 },
       },
     });
@@ -43,8 +72,9 @@ describe('LogPal full functionality', () => {
   it('can disable the initialization log', () => {
     const output = createOutput();
     new LogPal({
+      validateOutput: true,
       eventType: 'account-operation',
-      format: 'lambda',
+      format: 'action',
       logInitialization: false,
       logger: output,
     });
@@ -52,9 +82,55 @@ describe('LogPal full functionality', () => {
     expect(output.info).not.toHaveBeenCalled();
   });
 
+  it.each([true, false])(
+    'samples the same request consistently across services (validation %s)',
+    (validateOutput) => {
+      const random = vi.spyOn(Math, 'random');
+      for (const [eventType, randomValue] of Object.entries({
+        gateway: 0,
+        accounts: 0.999,
+      })) {
+        random.mockReturnValue(randomValue);
+        const output = createOutput();
+        const logpal = new LogPal({
+          eventType,
+          format: 'action',
+          validateOutput,
+          sampling: { info: 0.2, warn: 0.2 },
+          logInitialization: false,
+          logger: output,
+        });
+
+        for (const requestId of ['request-1', 'request-2', 'request-1']) {
+          logpal.event({ requestId }, () => {
+            logpal.addData({ context: { service: eventType } });
+          });
+          logpal.event({ requestId }, () => {
+            logpal.addWarning({ message: 'Slow response' });
+          });
+        }
+
+        expect(output.info).toHaveBeenCalledTimes(2);
+        expect(output.warn).toHaveBeenCalledTimes(2);
+        for (const index of [0, 1]) {
+          expect(readLog(output, 'info', index)).toMatchObject({
+            eventType,
+            requestId: 'request-1',
+          });
+          expect(readLog(output, 'warn', index)).toMatchObject({
+            eventType,
+            requestId: 'request-1',
+          });
+        }
+      }
+      expect(random).not.toHaveBeenCalled();
+    },
+  );
+
   it('creates an HTTP logger and emits complete and invalid events', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'http-request',
       format: 'httpRequest',
       logger: output,
@@ -119,59 +195,66 @@ describe('LogPal full functionality', () => {
     });
   });
 
-  it('infers nested Lambda fields from its predefined schema', async () => {
+  it('accepts generic context with the action format', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'summary-log',
-      format: 'lambda',
+      format: 'action',
       logger: output,
     });
 
-    await logpal.event({ requestId: 'request-lambda' }, async () => {
-      logpal.addData({ functionName: 'handler', custom: { customField: 1 } });
+    await logpal.event({ requestId: 'request-action' }, async () => {
+      logpal.addData({ context: { operation: 'transform', customField: 1 } });
+      logpal.addAction({ name: 'Data transformed' });
       if (false) {
-        // @ts-expect-error Lambda fields are inferred from the Zod schema.
-        logpal.addData({ functionName: 42 });
+        // @ts-expect-error Action context must be a record inferred from the Zod schema.
+        logpal.addData({ context: 42 });
       }
     });
 
     expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'summary-log',
-      requestId: 'request-lambda',
-      functionName: 'handler',
+      requestId: 'request-action',
       errors: [],
       warnings: [],
       externalCalls: [],
-      custom: { customField: 1 },
+      actions: [
+        {
+          name: 'Data transformed',
+          number: 1,
+          timestamp: expect.any(String),
+        },
+      ],
+      context: { operation: 'transform', customField: 1 },
     });
   });
 
-  it('rejects top-level lambda entries outside the schema', async () => {
+  it('rejects Lambda-specific fields in the action format', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'summary-log',
-      format: 'lambda',
+      format: 'action',
       logger: output,
     });
 
-    await logpal.event({ requestId: 'request-invalid-lambda' }, async () => {
+    await logpal.event({ requestId: 'request-invalid-action' }, async () => {
       logpal.addData({
-        functionName: 'handler',
         // @ts-expect-error The schema does not allow unknown top-level fields.
-        unexpected: true,
+        functionName: 'handler',
       });
     });
 
     expect(readLog(output, 'info', 1)).toEqual({
       eventType: 'summary-log',
-      requestId: 'request-invalid-lambda',
-      functionName: 'handler',
+      requestId: 'request-invalid-action',
       errors: [],
       warnings: [],
       externalCalls: [],
-      unexpected: true,
+      functionName: 'handler',
       _logpal: {
-        errors: [{ path: 'unexpected', code: 'unrecognized_keys' }],
+        errors: [{ path: 'functionName', code: 'unrecognized_keys' }],
       },
     });
   });
@@ -182,6 +265,7 @@ describe('LogPal full functionality', () => {
       operation: z.object({ name: z.string() }),
     });
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'custom-event',
       format,
       logger: output,
@@ -208,8 +292,9 @@ describe('LogPal full functionality', () => {
   it('records and rethrows handler errors', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'summary-log',
-      format: 'lambda',
+      format: 'action',
       logger: output,
     });
 
@@ -237,8 +322,9 @@ describe('LogPal full functionality', () => {
   it('tracks finished and unfinished external calls', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'summary-log',
-      format: 'lambda',
+      format: 'action',
       logInitialization: false,
       logger: output,
     });
@@ -278,8 +364,9 @@ describe('LogPal full functionality', () => {
   it('logs attempted changes after an event has finalized', async () => {
     const output = createOutput();
     const logpal = new LogPal({
+      validateOutput: true,
       eventType: 'summary-log',
-      format: 'lambda',
+      format: 'action',
       logInitialization: false,
       logger: output,
     });
@@ -287,7 +374,7 @@ describe('LogPal full functionality', () => {
     expect(() =>
       logpal.event({ requestId: 'request-after-final' }, () => {
         logpal.finalize();
-        logpal.addData({ functionName: 'late-call' });
+        logpal.addData({ context: { operation: 'late-call' } });
       }),
     ).toThrow('Cannot modify a finalized LogPal event');
 
@@ -297,8 +384,173 @@ describe('LogPal full functionality', () => {
       logpal: {
         eventType: 'summary-log',
         call: 'addData',
-        data: { functionName: 'late-call' },
+        data: { context: { operation: 'late-call' } },
       },
+    });
+  });
+
+  it.each([true, false])(
+    'applies schema parsing only when validateOutput is true (%s)',
+    (validateOutput) => {
+      const output = createOutput();
+      const format = z.object({
+        operation: z.string().transform((value) => value.toUpperCase()),
+        source: z.string().default('app'),
+      });
+      const parse = vi.spyOn(format, 'safeParse');
+      const logpal = new LogPal({
+        eventType: 'custom',
+        format,
+        validateOutput,
+        logInitialization: false,
+        logger: output,
+      });
+
+      logpal.event({}, () => {
+        logpal.addData({ operation: 'created' });
+        logpal.finalize();
+      });
+
+      expect(output.info).toHaveBeenCalledTimes(1);
+      expect(parse).toHaveBeenCalledTimes(validateOutput ? 1 : 0);
+      expect(readLog(output, 'info')).toEqual({
+        eventType: 'custom',
+        operation: validateOutput ? 'CREATED' : 'created',
+        ...(validateOutput ? { source: 'app' } : {}),
+        errors: [],
+        warnings: [],
+        externalCalls: [],
+      });
+    },
+  );
+
+  it('emits incomplete data without diagnostics when validation is disabled', () => {
+    const output = createOutput();
+    const logpal = new LogPal({
+      eventType: 'http-request',
+      format: 'httpRequest',
+      validateOutput: false,
+      logInitialization: false,
+      logger: output,
+    });
+
+    logpal.event({}, () => {
+      logpal.addData({ request: { path: '/users' } });
+    });
+
+    expect(readLog(output, 'info')).toEqual({
+      eventType: 'http-request',
+      request: { path: '/users' },
+      errors: [],
+      warnings: [],
+      externalCalls: [],
+    });
+  });
+
+  it.each([true, false])(
+    'keeps numbered, timestamped actions when a handler rejects (validation %s)',
+    async (validateOutput) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-11-17T12:00:00.000Z'));
+      const output = createOutput();
+      const logpal = new LogPal({
+        eventType: 'summary-log',
+        format: 'action',
+        validateOutput,
+        logInitialization: false,
+        logger: output,
+      });
+      const failure = new Error('handler failed');
+
+      await expect(
+        logpal.event({}, async () => {
+          logpal.addAction({
+            name: 'Account loaded',
+            custom: { id: 'acct-1' },
+          });
+          await Promise.resolve();
+          vi.setSystemTime(new Date('2026-11-17T12:00:01.000Z'));
+          logpal.addAction({ name: 'Account updated' });
+          throw failure;
+        }),
+      ).rejects.toBe(failure);
+
+      expect(output.error).toHaveBeenCalledTimes(1);
+      expect(readLog(output, 'error')).toMatchObject({
+        actions: [
+          {
+            name: 'Account loaded',
+            custom: { id: 'acct-1' },
+            number: 1,
+            timestamp: '2026-11-17T12:00:00.000Z',
+          },
+          {
+            name: 'Account updated',
+            number: 2,
+            timestamp: '2026-11-17T12:00:01.000Z',
+          },
+        ],
+        errors: [{ type: 'unhandled-error', message: 'handler failed' }],
+      });
+    },
+  );
+
+  it('isolates actions and their numbering between concurrent events', async () => {
+    const output = createOutput();
+    const logpal = new LogPal({
+      eventType: 'summary-log',
+      format: 'action',
+      validateOutput: true,
+      logInitialization: false,
+      logger: output,
+    });
+    const helper = (name: string) => logpal.addAction({ name });
+
+    await Promise.all(
+      ['first', 'second'].map((requestId) =>
+        logpal.event({ requestId }, async () => {
+          helper(`${requestId} started`);
+          await Promise.resolve();
+          helper(`${requestId} finished`);
+        }),
+      ),
+    );
+
+    expect(output.info).toHaveBeenCalledTimes(2);
+    for (const [index, requestId] of ['first', 'second'].entries()) {
+      expect(readLog(output, 'info', index)).toMatchObject({
+        requestId,
+        actions: [
+          { name: `${requestId} started`, number: 1 },
+          { name: `${requestId} finished`, number: 2 },
+        ],
+      });
+    }
+  });
+
+  it('rejects actions outside an event and after finalization', () => {
+    const output = createOutput();
+    const logpal = new LogPal({
+      eventType: 'summary-log',
+      format: 'action',
+      validateOutput: true,
+      logInitialization: false,
+      logger: output,
+    });
+
+    expect(() => logpal.addAction({ name: 'Outside' })).toThrow(
+      'No active LogPal event in this context',
+    );
+    expect(() =>
+      logpal.event({}, () => {
+        logpal.finalize();
+        logpal.addAction({ name: 'Too late' });
+      }),
+    ).toThrow('Cannot modify a finalized LogPal event');
+    expect(readLog(output, 'info')).not.toHaveProperty('actions');
+    expect(readLog(output, 'error')).toMatchObject({
+      eventType: 'logpal-call-after-finalization',
+      logpal: { call: 'addAction', data: { name: 'Too late' } },
     });
   });
 });

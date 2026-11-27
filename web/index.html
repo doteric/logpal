@@ -39,12 +39,13 @@
           Menu <span aria-hidden="true">+</span>
         </button>
         <div id="links" class="links">
+          <a href="#key-features">Features</a>
           <a href="#why">Problem</a>
           <a href="#features">Solution</a>
           <a href="#logpal">LogPal</a>
           <a
             class="nav-repository"
-            href="https://github.com/doteric/logpal/tree/feat/init"
+            href="https://github.com/doteric/logpal/"
             target="_blank"
             rel="noopener noreferrer"
             >GitHub <span aria-hidden="true">↗</span></a
@@ -53,15 +54,15 @@
       </nav>
     </header>
     <main id="main">
-      <aside class="shell format-notice" aria-label="Development disclaimer">
-        <p>
-          <strong>Not production-ready yet.</strong> This page demonstrates the
-          potential of a production logging tool. The output log structures are
-          provisional examples and still require revision, thorough analysis,
-          and confirmation.
-        </p>
-      </aside>
       <section id="top" class="hero" aria-labelledby="hero-title">
+        <aside class="shell format-notice" aria-label="Development disclaimer">
+          <p>
+            <strong>Not production-ready yet.</strong> This page demonstrates
+            the potential of a production logging tool. The output log
+            structures are provisional examples and still require revision,
+            thorough analysis, and confirmation.
+          </p>
+        </aside>
         <div class="shell">
           <div class="hero-grid">
             <div class="hero-copy">
@@ -164,6 +165,54 @@
             <span><b>02</b> Automatic finalization</span>
             <span><b>03</b> Schema validation</span>
           </div>
+        </div>
+      </section>
+
+      <section
+        id="key-features"
+        class="section"
+        aria-labelledby="key-features-title"
+      >
+        <div class="shell">
+          <p class="eyebrow">At a glance</p>
+          <div class="heading-row">
+            <h2 id="key-features-title">Key features</h2>
+            <p>
+              One event log with the context needed to understand what happened.
+            </p>
+          </div>
+          <ul class="key-features">
+            <li>
+              <h3>Wide events</h3>
+              <p>
+                Collect data, errors, outgoing calls, and completed actions in
+                one structured log per request or invocation.
+              </p>
+            </li>
+            <li>
+              <h3>AsyncLocalStorage support</h3>
+              <p>
+                Add data and context from any helper within the same event,
+                without passing a logger through every function.
+              </p>
+            </li>
+            <li>
+              <h3>Explicit output validation</h3>
+              <p>
+                Check for missing or invalid context with Zod. Choose
+                <code>validateOutput: true</code> to validate, or
+                <code>false</code> to skip parsing and its runtime cost.
+              </p>
+            </li>
+            <li>
+              <h3>Automatic finalization</h3>
+              <p>
+                Try/catch/finally handling finalizes the event on completion or
+                failure, records unhandled errors, and rethrows them to the
+                caller.
+              </p>
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -373,8 +422,9 @@
               <h2 id="logpal-title">LogPal (What?)</h2>
               <p>
                 LogPal collects data during a request or invocation and writes a
-                JSON log when the handler finishes. It includes HTTP and Lambda
-                formats, inferred TypeScript types, and Zod validation.
+                JSON log when the handler finishes. It includes HTTP and
+                action-based formats, inferred TypeScript types, configurable
+                Zod validation, sampling, and numbered actions with timestamps.
               </p>
             </div>
             <div class="flow">
@@ -400,6 +450,8 @@
                   Add event fields here. Use <code>addError()</code>,
                   <code>addWarning()</code>, and
                   <code>initExternalCall()</code> for issues and outgoing calls.
+                  Record completed steps with <code>addAction()</code>; each
+                  action gets a number starting at 1 and a UTC timestamp.
                 </p>
               </article>
               <article>
@@ -409,9 +461,9 @@
                 </div>
                 <h3>Finalize the log</h3>
                 <p>
-                  When the handler finishes, LogPal validates event data and
-                  writes JSON to the console by default. Validation issues
-                  appear in <code>_logpal.errors</code>.
+                  When the handler finishes or throws, LogPal writes JSON to the
+                  console by default. With <code>validateOutput: true</code>,
+                  validation issues appear in <code>_logpal.errors</code>.
                 </p>
               </article>
             </div>
@@ -423,15 +475,15 @@
                   aria-label="Predefined formats"
                 >
                   <button
-                    id="tab-lambda"
+                    id="tab-action"
                     class="format-tab active"
                     type="button"
                     role="tab"
                     aria-selected="true"
                     aria-controls="format-details"
-                    data-format="lambda"
+                    data-format="action"
                   >
-                    <span aria-hidden="true">λ</span> AWS Lambda
+                    <span aria-hidden="true">✓</span> Action based
                   </button>
                   <button
                     id="tab-http"
@@ -452,13 +504,13 @@
                 class="format-details"
                 id="format-details"
                 role="tabpanel"
-                aria-labelledby="tab-lambda"
+                aria-labelledby="tab-action"
                 tabindex="0"
               >
                 <div class="format-overview">
-                  <h3 id="format-name">AWS Lambda</h3>
+                  <h3 id="format-name">Action based</h3>
                   <p id="format-description">
-                    AWS invocation fields, supplied through addData().
+                    Generic context and completed actions for any operation.
                   </p>
                   <span class="schema-badge">Zod validated</span>
                 </div>
@@ -490,7 +542,7 @@
               <span aria-hidden="true">↳</span> Custom formats use your own Zod
               object schema.
               <a
-                href="https://github.com/doteric/logpal/blob/feat/init/README.md#http-request"
+                href="https://github.com/doteric/logpal/blob/master/README.md#http-request"
                 target="_blank"
                 rel="noopener noreferrer"
                 >See how <span aria-hidden="true">↗</span></a
@@ -511,7 +563,7 @@
             </div>
             <div class="example-links">
               <a
-                href="https://github.com/doteric/logpal/blob/feat/init/examples/httpRequest/handler.ts"
+                href="https://github.com/doteric/logpal/blob/master/examples/httpRequest/handler.ts"
                 target="_blank"
                 rel="noopener noreferrer"
                 ><span class="example-symbol" aria-hidden="true">⇄</span
@@ -521,7 +573,7 @@
                 ><span class="example-arrow" aria-hidden="true">↗</span></a
               >
               <a
-                href="https://github.com/doteric/logpal/blob/feat/init/examples/lambda/handler.ts"
+                href="https://github.com/doteric/logpal/blob/master/examples/lambda/handler.ts"
                 target="_blank"
                 rel="noopener noreferrer"
                 ><span class="example-symbol" aria-hidden="true">λ</span
@@ -548,7 +600,10 @@
               <h3 id="install-title">Install and configure</h3>
               <p class="intro">
                 Install the package, create one instance for your app, and wrap
-                each handler in an event.
+                each handler in an event. You must explicitly choose
+                <code>validateOutput: true</code> or <code>false</code>.
+                Disabling validation skips schema checks, defaults, and
+                transformations; TypeScript input types still apply.
               </p>
               <div class="install-command">
                 <span class="prompt" aria-hidden="true">$</span
@@ -577,6 +632,7 @@
 
 <span class="comment">// One instance for your application.</span>
 const logpal = new LogPal({
+  validateOutput: <span class="highlight">true</span>,
   eventType: <span class="value">'req-summary-log'</span>,
   format: <span class="value">'httpRequest'</span>,
   logInitialization: <span class="highlight">false</span>,
@@ -593,6 +649,7 @@ export const handleRequest = (
     });
 
     const response = await handle();
+    logpal.addAction({ name: <span class="value">'Request handled'</span> });
     logpal.addData({
       response: {
         statusCode: response.statusCode,
@@ -624,7 +681,7 @@ export const handleRequest = (
             rel="noopener noreferrer"
             >npm <span aria-hidden="true">↗</span></a
           ><a
-            href="https://github.com/doteric/logpal/tree/feat/init"
+            href="https://github.com/doteric/logpal/tree/master"
             target="_blank"
             rel="noopener noreferrer"
             >GitHub <span aria-hidden="true">↗</span></a
